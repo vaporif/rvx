@@ -50,16 +50,25 @@ pub fn find_in(base: &Path, name: &str, version: Option<&str>) -> Option<PathBuf
         return path.exists().then_some(path);
     }
 
-    // No version specified — find any cached version for this crate
+    // No version specified — find the newest cached version for this crate
     let prefix = format!("{name}@");
     if let Ok(entries) = fs::read_dir(&bin) {
+        let mut best: Option<PathBuf> = None;
+        let mut best_version: Option<String> = None;
         for entry in entries.flatten() {
             let fname = entry.file_name();
             let fname = fname.to_string_lossy();
-            if fname.starts_with(&prefix) {
-                return Some(entry.path());
+            if let Some(version) = fname.strip_prefix(&prefix) {
+                let is_newer = best_version
+                    .as_ref()
+                    .is_none_or(|prev| version > prev.as_str());
+                if is_newer {
+                    best_version = Some(version.to_string());
+                    best = Some(entry.path());
+                }
             }
         }
+        return best;
     }
     None
 }
@@ -135,21 +144,12 @@ pub fn clean() -> Result<()> {
 }
 
 pub fn clean_in(base: &Path) -> Result<()> {
-    let bin = bin_dir(base);
-    let meta = meta_dir(base);
-
-    if bin.exists() {
-        for entry in fs::read_dir(&bin)? {
-            fs::remove_file(entry?.path())?;
+    for dir_name in &["bin", "meta", "locks"] {
+        let dir = base.join(dir_name);
+        if dir.exists() {
+            fs::remove_dir_all(&dir)?;
         }
     }
-
-    if meta.exists() {
-        for entry in fs::read_dir(&meta)? {
-            fs::remove_file(entry?.path())?;
-        }
-    }
-
     Ok(())
 }
 

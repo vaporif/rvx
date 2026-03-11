@@ -74,6 +74,44 @@ fn test_cache_clean() {
 
     rvx::cache::clean_in(tmp.path()).unwrap();
 
-    assert!(fs::read_dir(&bin_dir).unwrap().next().is_none());
-    assert!(fs::read_dir(&meta_dir).unwrap().next().is_none());
+    assert!(!bin_dir.exists());
+    assert!(!meta_dir.exists());
+}
+
+#[test]
+fn test_cache_find_returns_newest_version() {
+    let tmp = TempDir::new().unwrap();
+    let base = tmp.path();
+
+    // Create a fake binary to store
+    let binary = base.join("tmp_binary");
+    fs::write(&binary, b"fake").unwrap();
+
+    let meta_v1 = rvx::cache::CacheMeta {
+        crate_name: "testcrate".to_string(),
+        version: "0.1.0".to_string(),
+        source_url: "https://example.com/v1".to_string(),
+        checksum: None,
+        cached_at: "1000".to_string(),
+    };
+    rvx::cache::store_to(base, &binary, &meta_v1).unwrap();
+
+    let meta_v2 = rvx::cache::CacheMeta {
+        crate_name: "testcrate".to_string(),
+        version: "0.2.0".to_string(),
+        source_url: "https://example.com/v2".to_string(),
+        checksum: None,
+        cached_at: "2000".to_string(),
+    };
+    rvx::cache::store_to(base, &binary, &meta_v2).unwrap();
+
+    // Find without version should return newest
+    let found = rvx::cache::find_in(base, "testcrate", None);
+    assert!(found.is_some());
+    let path = found.unwrap();
+    assert!(
+        path.to_string_lossy().contains("0.2.0"),
+        "Expected newest version, got: {}",
+        path.display()
+    );
 }
