@@ -1,0 +1,82 @@
+{
+  "nodes": {
+    "crane": {
+      "locked": {
+        "lastModified": 1773115265,
+        "narHash": "sha256-5fDkKTYEgue2klksd52WvcXfZdY1EIlbk0QggAwpFog=",
+        "owner": "ipetkov",
+        "repo": "crane",
+        "rev": "27711550d109bf6236478dc9f53b9e29c1a374c5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ipetkov",
+        "repo": "crane",
+        "type": "github"
+      }
+    },
+    "fenix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "rust-analyzer-src": "rust-analyzer-src"
+      },
+      "locked": {
+        "lastModified": 1773126504,
+        "narHash": "sha256-/iXlg2V5UMlgCmyRHkPHjlD6NdMfFOnwFMvH7REigD4=",
+        "owner": "nix-community",
+        "repo": "fenix",
+        "rev": "64407ddb1932af06ed5cd711f6a2ed946b2548b9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "fenix",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1772956932,
+        "narHash": "sha256-M0yS4AafhKxPPmOHGqIV0iKxgNO8bHDWdl1kOwGBwRY=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "608d0cadfed240589a7eea422407a547ad626a14",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "crane": "crane",
+        "fenix": "fenix",
+        "nixpkgs": "nixpkgs"
+      }
+    },
+    "rust-analyzer-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1773053271,
+        "narHash": "sha256-5xc4Bk4/AgIOpf8NSNJxD+vNJ9KVyDailQ1EmfMmwjE=",
+        "owner": "rust-lang",
+        "repo": "rust-analyzer",
+        "rev": "16e4436162aae5dbfe5b5ebb9ed0ded2305cff25",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rust-lang",
+        "ref": "nightly",
+        "repo": "rust-analyzer",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
