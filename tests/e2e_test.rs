@@ -96,7 +96,7 @@ fn test_download_and_run() {
 fn test_download_specific_version() {
     let tmp = tempfile::tempdir().unwrap();
     let out = rvx_with_home(tmp.path())
-        .args(["bat@0.24.0", "--", "--version"])
+        .args(["bat@0.25.0", "--", "--version"])
         .output()
         .unwrap();
     assert!(
@@ -106,8 +106,8 @@ fn test_download_specific_version() {
     );
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(
-        stdout.contains("0.24.0"),
-        "expected version 0.24.0, got: {stdout}"
+        stdout.contains("0.25.0"),
+        "expected version 0.25.0, got: {stdout}"
     );
 }
 
@@ -180,7 +180,7 @@ fn test_list_shows_installed() {
 
     // Install something
     let out = rvx_with_home(tmp.path())
-        .args(["bat@0.24.0", "--", "--version"])
+        .args(["bat@0.25.0", "--", "--version"])
         .output()
         .unwrap();
     assert!(
@@ -193,7 +193,7 @@ fn test_list_shows_installed() {
     let list = rvx_with_home(tmp.path()).args(["--list"]).output().unwrap();
     assert!(list.status.success());
     let stdout = String::from_utf8_lossy(&list.stdout);
-    assert!(stdout.contains("bat@0.24.0"), "list output: {stdout}");
+    assert!(stdout.contains("bat@0.25.0"), "list output: {stdout}");
 }
 
 #[test]
