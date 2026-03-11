@@ -52,12 +52,12 @@ pub fn read_response_with_limit(
 }
 
 /// Set executable permission (0o755) on Unix, no-op on other platforms.
+#[cfg_attr(not(unix), allow(unused_variables))]
 pub fn set_executable(path: &std::path::Path) -> std::io::Result<()> {
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
         std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755))?;
     }
-    let _ = path;
     Ok(())
 }

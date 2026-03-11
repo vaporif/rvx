@@ -1,8 +1,10 @@
 use crate::error::Result;
+use std::convert::Infallible;
 use std::path::Path;
 
-/// Replace current process with the cached binary (Unix) or spawn child (Windows)
-pub fn run(binary_path: &Path, args: &[String]) -> Result<()> {
+/// Replace current process with the cached binary (Unix) or spawn child (Windows).
+/// This function never returns on success.
+pub fn run(binary_path: &Path, args: &[String]) -> Result<Infallible> {
     #[cfg(unix)]
     {
         use std::os::unix::process::CommandExt;

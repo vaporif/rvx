@@ -28,15 +28,17 @@ fn run() -> error::Result<()> {
         return Ok(());
     }
 
-    let spec_str = cli.crate_spec.as_deref().expect("crate_spec required");
-    let spec = CrateSpec::parse(spec_str);
+    let spec_str = cli
+        .crate_spec
+        .as_deref()
+        .ok_or_else(|| error::Error::Other("crate_spec is required".to_string()))?;
+    let spec: CrateSpec = spec_str.parse().unwrap();
     let bin_name = cli.bin.as_deref().unwrap_or(&spec.name);
 
     // Check cache first (unless --update)
     if !cli.update {
         if let Some(cached) = cache::find(&spec)? {
-            exec::run(&cached, &cli.args)?;
-            unreachable!();
+            return exec::run(&cached, &cli.args).map(|inf| match inf {});
         }
     }
 
@@ -51,8 +53,7 @@ fn run() -> error::Result<()> {
     // Check cache again with resolved version
     if !cli.update {
         if let Some(cached) = cache::find(&resolved_spec)? {
-            exec::run(&cached, &cli.args)?;
-            unreachable!();
+            return exec::run(&cached, &cli.args).map(|inf| match inf {});
         }
     }
 
@@ -69,8 +70,7 @@ fn run() -> error::Result<()> {
     // Double-check cache after acquiring lock (another process may have downloaded)
     if !cli.update {
         if let Some(cached) = cache::find(&resolved_spec)? {
-            exec::run(&cached, &cli.args)?;
-            unreachable!();
+            return exec::run(&cached, &cli.args).map(|inf| match inf {});
         }
     }
 
@@ -89,6 +89,5 @@ fn run() -> error::Result<()> {
     }
 
     // Exec
-    exec::run(&cached_path, &cli.args)?;
-    unreachable!()
+    exec::run(&cached_path, &cli.args).map(|inf| match inf {})
 }

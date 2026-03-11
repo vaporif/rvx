@@ -39,9 +39,11 @@ pub struct CrateSpec {
     pub version: Option<String>,
 }
 
-impl CrateSpec {
-    pub fn parse(spec: &str) -> Self {
-        if let Some((name, version)) = spec.split_once('@') {
+impl std::str::FromStr for CrateSpec {
+    type Err = std::convert::Infallible;
+
+    fn from_str(spec: &str) -> std::result::Result<Self, Self::Err> {
+        Ok(if let Some((name, version)) = spec.split_once('@') {
             Self {
                 name: name.to_string(),
                 version: Some(version.to_string()),
@@ -51,6 +53,6 @@ impl CrateSpec {
                 name: spec.to_string(),
                 version: None,
             }
-        }
+        })
     }
 }
