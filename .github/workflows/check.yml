@@ -41,6 +41,11 @@ jobs:
       - name: Test
         run: cargo test --workspace
 
+      - name: Integration tests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: cargo test --test registry_test -- --ignored
+
       - name: Format
         run: cargo fmt --all -- --check
 
