@@ -57,15 +57,18 @@ fn run() -> error::Result<()> {
     }
 
     // Acquire file lock for concurrent download safety
+    // Lock is released when `_lock_file` is dropped (or process exits/execs)
     let lock_path = cache::lock_path(&crate_info.name, &crate_info.version);
     std::fs::create_dir_all(lock_path.parent().unwrap())?;
-    let lock_file = std::fs::File::create(&lock_path)?;
-    lock_file.lock_exclusive()?;
+    let _lock_file = {
+        let f = std::fs::File::create(&lock_path)?;
+        f.lock_exclusive()?;
+        f
+    };
 
     // Double-check cache after acquiring lock (another process may have downloaded)
     if !cli.update {
         if let Some(cached) = cache::find(&resolved_spec)? {
-            lock_file.unlock()?;
             exec::run(&cached, &cli.args)?;
             unreachable!();
         }
@@ -84,8 +87,6 @@ fn run() -> error::Result<()> {
     if let Some(parent) = binary_path.parent() {
         let _ = std::fs::remove_dir_all(parent);
     }
-
-    lock_file.unlock()?;
 
     // Exec
     exec::run(&cached_path, &cli.args)?;

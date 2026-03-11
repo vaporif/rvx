@@ -45,8 +45,7 @@ pub fn download(artifact: &Artifact, bin_name: &str, quiet: bool) -> Result<Path
     let binary_path = find_binary(extract_dir.path(), &binary_name)?;
 
     // Copy binary to a stable temp location that outlives this function
-    let stable_dir = tempfile::tempdir()?;
-    let stable_path = stable_dir.keep();
+    let stable_path = tempfile::tempdir()?.keep();
     let final_path = stable_path.join(&binary_name);
     fs::copy(&binary_path, &final_path)?;
     crate::set_executable(&final_path)?;
