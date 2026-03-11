@@ -2,6 +2,8 @@ name: Integration Tests
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
 
 concurrency:
   group: integration-tests
@@ -11,7 +13,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  integration-tests:
+  integration:
     name: Integration Tests
     runs-on: ubuntu-latest
     steps:
@@ -21,7 +23,31 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Integration tests
+      - name: Integration tests (registry)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: cargo test -- --ignored
+        run: cargo test --test registry_test -- --ignored
+
+  e2e:
+    name: E2E Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.os }}
+
+      - name: Build
+        run: cargo build
+
+      - name: E2E tests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: cargo test --test e2e_test -- --ignored
