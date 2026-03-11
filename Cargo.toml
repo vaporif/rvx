@@ -1,6 +1,6 @@
 [package]
 name = "rvx"
-version = "0.2.0-alpha1"
+version = "0.2.0"
 edition = "2021"
 description = "uvx for Rust — download and run pre-built crate binaries"
 license = "MIT"
@@ -9,7 +9,7 @@ homepage = "https://github.com/vaporif/rvx"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
-reqwest = { version = "0.12", features = ["blocking", "rustls-tls", "json"], default-features = false }
+reqwest = { version = "0.13", features = ["blocking", "rustls", "json"], default-features = false }
 flate2 = "1"
 tar = "0.4"
 xz2 = { version = "0.1", features = ["static"] }

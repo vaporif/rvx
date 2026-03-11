@@ -65,23 +65,86 @@ fn extract_archive(data: &[u8], dest: &Path, format: &ArchiveFormat) -> Result<(
     match format {
         ArchiveFormat::TarGz => {
             let gz = flate2::read::GzDecoder::new(data);
-            let mut archive = tar::Archive::new(gz);
-            archive.unpack(dest)?;
+            let archive = tar::Archive::new(gz);
+            safe_unpack_tar(archive, dest)?;
         }
         ArchiveFormat::TarXz => {
             let xz = xz2::read::XzDecoder::new(data);
-            let mut archive = tar::Archive::new(xz);
-            archive.unpack(dest)?;
+            let archive = tar::Archive::new(xz);
+            safe_unpack_tar(archive, dest)?;
         }
         ArchiveFormat::TarZst => {
             let zst = zstd::stream::read::Decoder::new(data)?;
-            let mut archive = tar::Archive::new(zst);
-            archive.unpack(dest)?;
+            let archive = tar::Archive::new(zst);
+            safe_unpack_tar(archive, dest)?;
         }
         ArchiveFormat::Zip => {
-            let cursor = Cursor::new(data);
-            let mut archive = zip::ZipArchive::new(cursor)?;
-            archive.extract(dest)?;
+            safe_extract_zip(data, dest)?;
+        }
+    }
+    Ok(())
+}
+
+fn safe_unpack_tar<R: std::io::Read>(mut archive: tar::Archive<R>, dest: &Path) -> Result<()> {
+    let dest = dest.canonicalize().unwrap_or_else(|_| dest.to_path_buf());
+    for entry in archive.entries()? {
+        let mut entry = entry?;
+        let path = entry.path()?.to_path_buf();
+
+        // Reject any path with ".." components
+        if path
+            .components()
+            .any(|c| matches!(c, std::path::Component::ParentDir))
+        {
+            return Err(Error::UnsafePath(path.display().to_string()));
+        }
+
+        let full_path = dest.join(&path);
+        // Ensure resolved path is within destination
+        let resolved = if full_path.exists() {
+            full_path.canonicalize()?
+        } else {
+            // For new files, canonicalize the parent
+            if let Some(parent) = full_path.parent() {
+                fs::create_dir_all(parent)?;
+                parent
+                    .canonicalize()?
+                    .join(full_path.file_name().unwrap_or_default())
+            } else {
+                full_path.clone()
+            }
+        };
+
+        if !resolved.starts_with(&dest) {
+            return Err(Error::UnsafePath(path.display().to_string()));
+        }
+
+        entry.unpack(&resolved)?;
+    }
+    Ok(())
+}
+
+fn safe_extract_zip(data: &[u8], dest: &Path) -> Result<()> {
+    let cursor = Cursor::new(data);
+    let mut archive = zip::ZipArchive::new(cursor)?;
+    let dest = dest.canonicalize().unwrap_or_else(|_| dest.to_path_buf());
+
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i)?;
+        let Some(enclosed_name) = file.enclosed_name() else {
+            return Err(Error::UnsafePath(file.name().to_string()));
+        };
+
+        let out_path = dest.join(enclosed_name);
+
+        if file.is_dir() {
+            fs::create_dir_all(&out_path)?;
+        } else {
+            if let Some(parent) = out_path.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            let mut outfile = fs::File::create(&out_path)?;
+            std::io::copy(&mut file, &mut outfile)?;
         }
     }
     Ok(())
@@ -147,6 +210,57 @@ mod tests {
             .read_to_string(&mut content)
             .unwrap();
         assert!(content.contains("echo hello"));
+    }
+
+    #[test]
+    fn test_tar_path_traversal_rejected() {
+        // Build a malicious tar manually since tar::Builder rejects ".." in paths
+        let mut tar_builder = tar::Builder::new(Vec::new());
+
+        let content = b"malicious";
+        let mut header = tar::Header::new_gnu();
+        header.set_size(content.len() as u64);
+        header.set_mode(0o755);
+        header.set_entry_type(tar::EntryType::Regular);
+        // Write the path directly into the header bytes to bypass validation
+        {
+            let path_bytes = b"../../etc/evil";
+            let header_bytes = header.as_mut_bytes();
+            header_bytes[..path_bytes.len()].copy_from_slice(path_bytes);
+            header_bytes[path_bytes.len()] = 0;
+        }
+        header.set_cksum();
+        tar_builder.append(&header, &content[..]).unwrap();
+
+        let tar_data = tar_builder.into_inner().unwrap();
+
+        let mut gz_encoder =
+            flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+        gz_encoder.write_all(&tar_data).unwrap();
+        let gz_data = gz_encoder.finish().unwrap();
+
+        let tmp = tempfile::tempdir().unwrap();
+        let result = extract_archive(&gz_data, tmp.path(), &ArchiveFormat::TarGz);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Unsafe path"));
+    }
+
+    #[test]
+    fn test_zip_extraction_works() {
+        let buf = Vec::new();
+        let cursor = std::io::Cursor::new(buf);
+        let mut zip_writer = zip::ZipWriter::new(cursor);
+        let options = zip::write::SimpleFileOptions::default();
+        zip_writer.start_file("mybin", options).unwrap();
+        zip_writer.write_all(b"binary content").unwrap();
+        let cursor = zip_writer.finish().unwrap();
+        let zip_data = cursor.into_inner();
+
+        let tmp = tempfile::tempdir().unwrap();
+        extract_archive(&zip_data, tmp.path(), &ArchiveFormat::Zip).unwrap();
+
+        let found = find_binary(tmp.path(), "mybin").unwrap();
+        assert!(found.exists());
     }
 
     #[test]

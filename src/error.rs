@@ -38,6 +38,9 @@ pub enum Error {
     #[error("ZIP error: {0}")]
     Zip(#[from] zip::result::ZipError),
 
+    #[error("Unsafe path in archive: {0}")]
+    UnsafePath(String),
+
     #[error("{0}")]
     Other(String),
 }
