@@ -10,15 +10,15 @@ OS="$(uname -s)"
 ARCH="$(uname -m)"
 
 case "$OS" in
-    Linux)  os="unknown-linux-gnu" ;;
+    Linux)  os="unknown-linux-musl" ;;
     Darwin) os="apple-darwin" ;;
     *)      echo "error: unsupported OS: $OS" >&2; exit 1 ;;
 esac
 
 case "$ARCH" in
-    x86_64|amd64)   arch="x86_64" ;;
-    aarch64|arm64)   arch="aarch64" ;;
-    *)               echo "error: unsupported architecture: $ARCH" >&2; exit 1 ;;
+    x86_64|amd64)  arch="x86_64" ;;
+    aarch64|arm64) arch="aarch64" ;;
+    *)             echo "error: unsupported architecture: $ARCH" >&2; exit 1 ;;
 esac
 
 TARGET="${arch}-${os}"
@@ -32,45 +32,20 @@ if [ -z "$LATEST" ]; then
     exit 1
 fi
 
-VERSION="${LATEST#v}"
+# Archive naming: rvx-<target>-<tag>.tar.gz
+ARCHIVE="${BINARY}-${TARGET}-${LATEST}.tar.gz"
+URL="https://github.com/${REPO}/releases/download/${LATEST}/${ARCHIVE}"
 
-echo "Installing ${BINARY} ${VERSION} for ${TARGET}..."
-
-# Try common archive naming patterns
-URL=""
-for pattern in \
-    "${BINARY}-${TARGET}.tar.gz" \
-    "${BINARY}-v${VERSION}-${TARGET}.tar.gz" \
-    "${BINARY}-${VERSION}-${TARGET}.tar.gz" \
-    "${BINARY}-${TARGET}.tar.xz" \
-    "${BINARY}-${TARGET}.zip"; do
-    check_url="https://github.com/${REPO}/releases/download/${LATEST}/${pattern}"
-    if curl -fsSL --head "$check_url" >/dev/null 2>&1; then
-        URL="$check_url"
-        break
-    fi
-done
-
-if [ -z "$URL" ]; then
-    echo "error: no binary found for ${TARGET} in release ${LATEST}" >&2
-    echo "  Check: https://github.com/${REPO}/releases/tag/${LATEST}" >&2
-    exit 1
-fi
+echo "Installing ${BINARY} ${LATEST} for ${TARGET}..."
 
 # Download and extract
 TMPDIR=$(mktemp -d)
 trap 'rm -rf "$TMPDIR"' EXIT
 
 echo "Downloading ${URL}..."
-curl -fsSL "$URL" -o "${TMPDIR}/archive"
+curl -fsSL "$URL" -o "${TMPDIR}/archive.tar.gz"
 
-mkdir -p "$INSTALL_DIR"
-
-case "$URL" in
-    *.tar.gz)  tar xzf "${TMPDIR}/archive" -C "$TMPDIR" ;;
-    *.tar.xz)  tar xJf "${TMPDIR}/archive" -C "$TMPDIR" ;;
-    *.zip)     unzip -q "${TMPDIR}/archive" -d "$TMPDIR" ;;
-esac
+tar xzf "${TMPDIR}/archive.tar.gz" -C "$TMPDIR"
 
 # Find and install binary
 BIN=$(find "$TMPDIR" -name "$BINARY" -type f | head -1)
@@ -79,6 +54,7 @@ if [ -z "$BIN" ]; then
     exit 1
 fi
 
+mkdir -p "$INSTALL_DIR"
 cp "$BIN" "${INSTALL_DIR}/${BINARY}"
 chmod +x "${INSTALL_DIR}/${BINARY}"
 
