@@ -66,9 +66,17 @@ try {
 
     Write-Host "Installed $Binary to $InstallDir\$Binary.exe"
 
-    # Check PATH
-    if ($env:PATH -notlike "*$InstallDir*") {
-        Write-Host "  Add to PATH: [Environment]::SetEnvironmentVariable('PATH', `"$InstallDir;`$env:PATH`", 'User')"
+    # Add to user PATH permanently
+    $UserPath = [Environment]::GetEnvironmentVariable('PATH', 'User')
+    if ($UserPath -notlike "*$InstallDir*") {
+        if ($UserPath) {
+            [Environment]::SetEnvironmentVariable('PATH', "$InstallDir;$UserPath", 'User')
+        } else {
+            [Environment]::SetEnvironmentVariable('PATH', "$InstallDir", 'User')
+        }
+        # Also update current session
+        $env:PATH = "$InstallDir;$env:PATH"
+        Write-Host "Added $InstallDir to user PATH"
     }
 } finally {
     Remove-Item -Path $TmpDir -Recurse -Force -ErrorAction SilentlyContinue

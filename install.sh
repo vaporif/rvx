@@ -4,6 +4,7 @@ set -eu
 REPO="vaporif/rvx"
 BINARY="rvx"
 INSTALL_DIR="${RVX_INSTALL_DIR:-$HOME/.local/bin}"
+ENV_FILE="$HOME/.rvx/env"
 
 # GitHub API auth (optional, avoids rate limits)
 AUTH_HEADER=""
@@ -79,8 +80,35 @@ chmod +x "${INSTALL_DIR}/${BINARY}"
 
 echo "Installed ${BINARY} to ${INSTALL_DIR}/${BINARY}"
 
-# Check PATH
-case ":$PATH:" in
-    *":${INSTALL_DIR}:"*) ;;
-    *) echo "  Add to PATH: export PATH=\"${INSTALL_DIR}:\$PATH\"" ;;
+# Create env file for PATH setup
+mkdir -p "$(dirname "$ENV_FILE")"
+cat > "$ENV_FILE" <<'ENVEOF'
+#!/bin/sh
+# rvx shell setup
+case ":${PATH}:" in
+    *":$HOME/.local/bin:"*) ;;
+    *) export PATH="$HOME/.local/bin:$PATH" ;;
 esac
+ENVEOF
+
+# Add to all shell profile files
+SOURCE_LINE=". \"$ENV_FILE\""
+
+for rc in "$HOME/.profile" "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.zshenv"; do
+    # Only modify files that already exist, except .profile which we always set up
+    if [ -f "$rc" ] || [ "$rc" = "$HOME/.profile" ]; then
+        if ! grep -qF "$ENV_FILE" "$rc" 2>/dev/null; then
+            echo "$SOURCE_LINE" >> "$rc"
+        fi
+    fi
+done
+
+# Fish uses a different syntax
+FISH_CONFIG="$HOME/.config/fish/conf.d/rvx.fish"
+if [ -d "$HOME/.config/fish" ]; then
+    mkdir -p "$HOME/.config/fish/conf.d"
+    echo "fish_add_path $INSTALL_DIR" > "$FISH_CONFIG"
+fi
+
+echo "Added ${INSTALL_DIR} to PATH via ${ENV_FILE}"
+echo "To use now, run: . \"${ENV_FILE}\""
