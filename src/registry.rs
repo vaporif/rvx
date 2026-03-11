@@ -4,10 +4,8 @@ use serde::Deserialize;
 use std::io::Read;
 
 const CRATES_IO_API: &str = "https://crates.io/api/v1";
-const USER_AGENT: &str = "rvx (https://github.com/user/rvx)";
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub struct CrateInfo {
     pub name: String,
     pub version: String,
@@ -16,10 +14,10 @@ pub struct CrateInfo {
 }
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub struct BinstallMeta {
     pub pkg_url: String,
     pub pkg_fmt: Option<String>,
+    #[allow(dead_code)] // parsed from Cargo.toml, reserved for future use
     pub bin_dir: Option<String>,
 }
 
@@ -71,7 +69,7 @@ struct CargoMetadataBinstall {
 
 fn http_client() -> Result<reqwest::blocking::Client> {
     Ok(reqwest::blocking::Client::builder()
-        .user_agent(USER_AGENT)
+        .user_agent(crate::USER_AGENT)
         .timeout(std::time::Duration::from_secs(60))
         .build()?)
 }

@@ -1,21 +1,13 @@
 use crate::error::{Error, Result};
-use crate::registry::CrateInfo;
 use crate::resolve::{ArchiveFormat, Artifact};
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
 
-const USER_AGENT: &str = "rvx (https://github.com/user/rvx)";
-
-pub fn download(
-    artifact: &Artifact,
-    _info: &CrateInfo,
-    bin_name: &str,
-    quiet: bool,
-) -> Result<PathBuf> {
+pub fn download(artifact: &Artifact, bin_name: &str, quiet: bool) -> Result<PathBuf> {
     let client = reqwest::blocking::Client::builder()
-        .user_agent(USER_AGENT)
+        .user_agent(crate::USER_AGENT)
         .timeout(std::time::Duration::from_secs(300))
         .build()?;
 
@@ -105,36 +97,23 @@ fn extract_archive(data: &[u8], dest: &Path, format: &ArchiveFormat) -> Result<(
 }
 
 fn find_binary(dir: &Path, binary_name: &str) -> Result<PathBuf> {
-    let entries = walkdir(dir)?;
-
-    for entry in &entries {
-        if let Some(name) = entry.file_name().and_then(|n| n.to_str()) {
-            if name == binary_name {
-                return Ok(entry.clone());
-            }
-        }
-    }
-
-    Err(Error::BinaryNotFoundInArchive(binary_name.to_string()))
+    find_binary_recursive(dir, binary_name)
+        .ok_or_else(|| Error::BinaryNotFoundInArchive(binary_name.to_string()))
 }
 
-fn walkdir(dir: &Path) -> Result<Vec<PathBuf>> {
-    let mut results = Vec::new();
-    if !dir.is_dir() {
-        return Ok(results);
-    }
-
-    for entry in fs::read_dir(dir)? {
-        let entry = entry?;
+fn find_binary_recursive(dir: &Path, binary_name: &str) -> Option<PathBuf> {
+    let entries = fs::read_dir(dir).ok()?;
+    for entry in entries.flatten() {
         let path = entry.path();
         if path.is_dir() {
-            results.extend(walkdir(&path)?);
-        } else {
-            results.push(path);
+            if let Some(found) = find_binary_recursive(&path, binary_name) {
+                return Some(found);
+            }
+        } else if path.file_name().and_then(|n| n.to_str()) == Some(binary_name) {
+            return Some(path);
         }
     }
-
-    Ok(results)
+    None
 }
 
 #[cfg(test)]

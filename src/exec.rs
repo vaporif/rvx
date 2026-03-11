@@ -2,7 +2,7 @@ use crate::error::Result;
 use std::path::Path;
 
 /// Replace current process with the cached binary (Unix) or spawn child (Windows)
-pub fn run(binary_path: &Path, _bin_name: &str, args: &[String]) -> Result<()> {
+pub fn run(binary_path: &Path, args: &[String]) -> Result<()> {
     #[cfg(unix)]
     {
         use std::os::unix::process::CommandExt;

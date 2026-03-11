@@ -7,6 +7,8 @@ mod registry;
 mod resolve;
 mod target;
 
+const USER_AGENT: &str = "rvx (https://github.com/user/rvx)";
+
 use clap::Parser;
 use cli::{Cli, CrateSpec};
 use fs2::FileExt;
@@ -38,7 +40,7 @@ fn run() -> error::Result<()> {
     // Check cache first (unless --update)
     if !cli.update {
         if let Some(cached) = cache::find(&spec)? {
-            exec::run(&cached, bin_name, &cli.args)?;
+            exec::run(&cached, &cli.args)?;
             unreachable!();
         }
     }
@@ -46,14 +48,15 @@ fn run() -> error::Result<()> {
     // Resolve version and metadata from crates.io
     let crate_info = registry::fetch(&spec)?;
 
+    let resolved_spec = CrateSpec {
+        name: spec.name.clone(),
+        version: Some(crate_info.version.clone()),
+    };
+
     // Check cache again with resolved version
     if !cli.update {
-        let resolved_spec = CrateSpec {
-            name: spec.name.clone(),
-            version: Some(crate_info.version.clone()),
-        };
         if let Some(cached) = cache::find(&resolved_spec)? {
-            exec::run(&cached, bin_name, &cli.args)?;
+            exec::run(&cached, &cli.args)?;
             unreachable!();
         }
     }
@@ -66,13 +69,9 @@ fn run() -> error::Result<()> {
 
     // Double-check cache after acquiring lock (another process may have downloaded)
     if !cli.update {
-        let resolved_spec = CrateSpec {
-            name: spec.name.clone(),
-            version: Some(crate_info.version.clone()),
-        };
         if let Some(cached) = cache::find(&resolved_spec)? {
             lock_file.unlock()?;
-            exec::run(&cached, bin_name, &cli.args)?;
+            exec::run(&cached, &cli.args)?;
             unreachable!();
         }
     }
@@ -81,7 +80,7 @@ fn run() -> error::Result<()> {
     let artifact = resolve::resolve(&crate_info, bin_name, cli.quiet)?;
 
     // Download and extract
-    let binary_path = download::download(&artifact, &crate_info, bin_name, cli.quiet)?;
+    let binary_path = download::download(&artifact, bin_name, cli.quiet)?;
 
     // Cache the binary
     let cached_path = cache::store(&binary_path, &crate_info, &artifact)?;
@@ -94,6 +93,6 @@ fn run() -> error::Result<()> {
     lock_file.unlock()?;
 
     // Exec
-    exec::run(&cached_path, bin_name, &cli.args)?;
+    exec::run(&cached_path, &cli.args)?;
     unreachable!()
 }

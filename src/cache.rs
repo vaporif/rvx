@@ -47,10 +47,7 @@ pub fn find_in(base: &Path, name: &str, version: Option<&str>) -> Option<PathBuf
 
     if let Some(v) = version {
         let path = bin.join(cache_key(name, v));
-        if path.exists() {
-            return Some(path);
-        }
-        return None;
+        return path.exists().then_some(path);
     }
 
     // No version specified — find any cached version for this crate

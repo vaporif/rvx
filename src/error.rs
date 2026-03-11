@@ -1,7 +1,6 @@
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-#[allow(dead_code)]
 pub enum Error {
     #[error("Crate `{0}` not found on crates.io")]
     CrateNotFound(String),
@@ -21,14 +20,8 @@ pub enum Error {
     #[error("Checksum mismatch: expected {expected}, got {actual}")]
     ChecksumMismatch { expected: String, actual: String },
 
-    #[error("Not cached and no network available")]
-    NotCachedNoNetwork,
-
     #[error("GitHub API rate limit exceeded. Set GITHUB_TOKEN env var for higher limits.")]
     GitHubRateLimit,
-
-    #[error("Unsupported archive format: {0}")]
-    UnsupportedArchiveFormat(String),
 
     #[error(transparent)]
     Http(#[from] reqwest::Error),

@@ -39,11 +39,9 @@ impl ArchiveFormat {
     }
 }
 
-const USER_AGENT: &str = "rvx (https://github.com/user/rvx)";
-
 fn build_client() -> Result<reqwest::blocking::Client> {
     Ok(reqwest::blocking::Client::builder()
-        .user_agent(USER_AGENT)
+        .user_agent(crate::USER_AGENT)
         .timeout(std::time::Duration::from_secs(60))
         .build()?)
 }
@@ -146,7 +144,7 @@ fn try_binstall(
     Ok(None)
 }
 
-pub fn render_binstall_template(
+fn render_binstall_template(
     template: &str,
     info: &CrateInfo,
     bin_name: &str,
@@ -356,7 +354,7 @@ fn try_fetch_checksum(
     Ok(None)
 }
 
-pub fn parse_github_url(url: &str) -> Option<(String, String)> {
+fn parse_github_url(url: &str) -> Option<(String, String)> {
     // Handle https://github.com/owner/repo[.git][/...]
     if let Some(rest) = url
         .strip_prefix("https://github.com/")

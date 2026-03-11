@@ -1,9 +1,7 @@
-#[allow(dead_code)]
 pub fn current_target() -> &'static str {
     env!("RVX_TARGET")
 }
 
-#[allow(dead_code)]
 pub fn target_variants() -> Vec<String> {
     let primary = current_target().to_string();
     let mut variants = vec![primary.clone()];
@@ -17,7 +15,6 @@ pub fn target_variants() -> Vec<String> {
     variants
 }
 
-#[allow(dead_code)]
 pub fn binary_ext() -> &'static str {
     if cfg!(target_os = "windows") {
         ".exe"
