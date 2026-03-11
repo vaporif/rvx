@@ -142,7 +142,7 @@ fn fetch_binstall_metadata(
     };
 
     let resp = client.get(&url).send()?;
-    let bytes = resp.bytes()?;
+    let bytes = crate::read_response_with_limit(resp, crate::MAX_CRATE_TARBALL_SIZE)?;
 
     // .crate files are gzipped tarballs
     let gz = flate2::read::GzDecoder::new(&bytes[..]);

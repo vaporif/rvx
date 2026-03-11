@@ -41,6 +41,9 @@ pub enum Error {
     #[error("Unsafe path in archive: {0}")]
     UnsafePath(String),
 
+    #[error("Download exceeds maximum size of {max_mb}MB")]
+    DownloadTooLarge { max_mb: u64 },
+
     #[error("{0}")]
     Other(String),
 }

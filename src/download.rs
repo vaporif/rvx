@@ -16,12 +16,12 @@ pub fn download(artifact: &Artifact, bin_name: &str, quiet: bool) -> Result<Path
     }
 
     let resp = client.get(&artifact.url).send()?.error_for_status()?;
-    let bytes = resp.bytes()?;
+    let bytes = crate::read_response_with_limit(resp, crate::MAX_ARTIFACT_SIZE)?;
 
     // Verify checksum if available
     if let Some(ref expected) = artifact.checksum {
         let mut hasher = Sha256::new();
-        hasher.update(bytes.as_ref());
+        hasher.update(&bytes);
         let actual = format!("{:x}", hasher.finalize());
         if actual != *expected {
             return Err(Error::ChecksumMismatch {
@@ -36,7 +36,7 @@ pub fn download(artifact: &Artifact, bin_name: &str, quiet: bool) -> Result<Path
 
     // Extract to temp dir
     let extract_dir = tempfile::tempdir()?;
-    extract_archive(bytes.as_ref(), extract_dir.path(), &artifact.format)?;
+    extract_archive(&bytes, extract_dir.path(), &artifact.format)?;
 
     // Find the binary
     let binary_name = if cfg!(target_os = "windows") {
