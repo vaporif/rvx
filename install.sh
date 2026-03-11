@@ -23,9 +23,14 @@ esac
 
 TARGET="${arch}-${os}"
 
-# Get latest release tag
-LATEST=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
+# Get latest release tag (tries stable first, falls back to any release including prereleases)
+LATEST=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null \
     | grep '"tag_name"' | head -1 | sed 's/.*: "//;s/".*//')
+
+if [ -z "$LATEST" ]; then
+    LATEST=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases" \
+        | grep '"tag_name"' | head -1 | sed 's/.*: "//;s/".*//')
+fi
 
 if [ -z "$LATEST" ]; then
     echo "error: could not determine latest release" >&2
