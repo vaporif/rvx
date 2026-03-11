@@ -1,5 +1,8 @@
 # rvx
 
+[![Check](https://github.com/vaporif/rvx/actions/workflows/check.yml/badge.svg)](https://github.com/vaporif/rvx/actions/workflows/check.yml)
+[![Release](https://github.com/vaporif/rvx/actions/workflows/release.yml/badge.svg)](https://github.com/vaporif/rvx/actions/workflows/release.yml)
+
 Like [uvx](https://docs.astral.sh/uv/guides/tools/) but for Rust — download and run pre-built crate binaries without a Rust toolchain.
 
 ## Usage
