@@ -6,10 +6,7 @@ use std::io::Cursor;
 use std::path::{Path, PathBuf};
 
 pub fn download(artifact: &Artifact, bin_name: &str, quiet: bool) -> Result<PathBuf> {
-    let client = reqwest::blocking::Client::builder()
-        .user_agent(crate::USER_AGENT)
-        .timeout(std::time::Duration::from_secs(300))
-        .build()?;
+    let client = crate::http_client()?;
 
     if !quiet {
         eprintln!("Downloading {}", artifact.url);

@@ -67,16 +67,9 @@ struct CargoMetadataBinstall {
     bin_dir: Option<String>,
 }
 
-fn http_client() -> Result<reqwest::blocking::Client> {
-    Ok(reqwest::blocking::Client::builder()
-        .user_agent(crate::USER_AGENT)
-        .timeout(std::time::Duration::from_secs(60))
-        .build()?)
-}
-
 /// Fetch crate info from crates.io, including binstall metadata from .crate tarball
 pub fn fetch(spec: &CrateSpec) -> Result<CrateInfo> {
-    let client = http_client()?;
+    let client = crate::http_client()?;
 
     // Fetch crate metadata
     let url = format!("{CRATES_IO_API}/crates/{}", spec.name);

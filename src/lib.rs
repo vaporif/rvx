@@ -9,6 +9,14 @@ pub mod target;
 
 pub const USER_AGENT: &str = "rvx (https://github.com/vaporif/rvx)";
 
+/// Build a shared blocking HTTP client with standard settings.
+pub fn http_client() -> error::Result<reqwest::blocking::Client> {
+    Ok(reqwest::blocking::Client::builder()
+        .user_agent(USER_AGENT)
+        .timeout(std::time::Duration::from_secs(300))
+        .build()?)
+}
+
 /// Maximum artifact download size (500 MB)
 pub const MAX_ARTIFACT_SIZE: u64 = 500 * 1024 * 1024;
 /// Maximum .crate tarball size (50 MB)

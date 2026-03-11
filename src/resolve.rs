@@ -39,13 +39,6 @@ impl ArchiveFormat {
     }
 }
 
-fn build_client() -> Result<reqwest::blocking::Client> {
-    Ok(reqwest::blocking::Client::builder()
-        .user_agent(crate::USER_AGENT)
-        .timeout(std::time::Duration::from_secs(60))
-        .build()?)
-}
-
 fn github_auth_header() -> HeaderMap {
     let mut headers = HeaderMap::new();
     if let Ok(token) = std::env::var("GITHUB_TOKEN") {
@@ -65,7 +58,7 @@ fn auth_for_url(url: &str) -> HeaderMap {
 }
 
 pub fn resolve(info: &CrateInfo, bin_name: &str, quiet: bool) -> Result<Artifact> {
-    let client = build_client()?;
+    let client = crate::http_client()?;
 
     for target_triple in target::target_variants() {
         // Try binstall metadata first
