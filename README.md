@@ -40,11 +40,31 @@ Supports `.tar.gz`, `.tar.xz`, `.tar.zst`, and `.zip` archives.
 
 ## Install
 
+**Linux / macOS:**
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/vaporif/rvx/main/install.sh | sh
+```
+
+**Nix:**
+
+```sh
+nix profile install github:vaporif/rvx
+```
+
+Or run without installing:
+
+```sh
+nix run github:vaporif/rvx -- ripgrep --version
+```
+
 **From source:**
 
 ```sh
-cargo install --path .
+cargo install --git https://github.com/vaporif/rvx
 ```
+
+> Windows is not supported yet.
 
 ## Configuration
 

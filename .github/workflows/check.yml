@@ -98,6 +98,12 @@ jobs:
       - name: TOML lint
         run: taplo check
 
+      - name: Actionlint
+        uses: reviewdog/action-actionlint@v1
+
+      - name: Shellcheck
+        run: shellcheck install.sh
+
       - name: Gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
