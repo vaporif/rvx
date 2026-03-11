@@ -7,7 +7,7 @@ Like [uvx](https://docs.astral.sh/uv/guides/tools/) but for Rust — download an
 ```sh
 rvx ripgrep -- --version
 rvx bat@0.24.0 -- README.md
-rvx --bin rg ripgrep -- -i pattern
+rvx --bin parry parry-ai    # when binary name differs from crate
 ```
 
 ### Cache Management
@@ -46,6 +46,12 @@ Supports `.tar.gz`, `.tar.xz`, `.tar.zst`, and `.zip` archives.
 curl -fsSL https://raw.githubusercontent.com/vaporif/rvx/main/install.sh | sh
 ```
 
+**Windows (PowerShell)** *(untested)*:
+
+```powershell
+irm https://raw.githubusercontent.com/vaporif/rvx/main/install.ps1 | iex
+```
+
 **Nix:**
 
 ```sh
@@ -64,7 +70,6 @@ nix run github:vaporif/rvx -- ripgrep --version
 cargo install --git https://github.com/vaporif/rvx
 ```
 
-> Windows is not supported yet.
 
 ## Configuration
 
