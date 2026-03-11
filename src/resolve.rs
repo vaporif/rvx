@@ -56,6 +56,14 @@ fn github_auth_header() -> HeaderMap {
     headers
 }
 
+fn auth_for_url(url: &str) -> HeaderMap {
+    if url.contains("github.com") {
+        github_auth_header()
+    } else {
+        HeaderMap::new()
+    }
+}
+
 pub fn resolve(info: &CrateInfo, bin_name: &str, quiet: bool) -> Result<Artifact> {
     let client = build_client()?;
 
@@ -121,7 +129,7 @@ fn try_binstall(
         let url = render_binstall_template(&binstall.pkg_url, info, bin_name, target_triple, ext);
 
         // HEAD check to verify URL exists
-        let resp = client.head(&url).send();
+        let resp = client.head(&url).headers(auth_for_url(&url)).send();
         match resp {
             Ok(r) if r.status().is_success() => {
                 if !quiet {
@@ -258,25 +266,24 @@ fn find_matching_asset<'a>(
     bin_name: &str,
     crate_name: &str,
 ) -> Option<&'a GitHubAsset> {
-    // Filter assets that contain the target triple and have a known archive extension
-    let matching: Vec<_> = assets
-        .iter()
-        .filter(|a| {
-            a.name.contains(target_triple) && ArchiveFormat::from_filename(&a.name).is_some()
-        })
-        .collect();
+    let mut first = None;
+    let mut by_crate = None;
 
-    if matching.is_empty() {
-        return None;
+    for asset in assets.iter().filter(|a| {
+        a.name.contains(target_triple) && ArchiveFormat::from_filename(&a.name).is_some()
+    }) {
+        if first.is_none() {
+            first = Some(asset);
+        }
+        if asset.name.contains(bin_name) {
+            return Some(asset);
+        }
+        if asset.name.contains(crate_name) && by_crate.is_none() {
+            by_crate = Some(asset);
+        }
     }
 
-    // Prefer assets matching bin name or crate name
-    matching
-        .iter()
-        .find(|a| a.name.contains(bin_name))
-        .or_else(|| matching.iter().find(|a| a.name.contains(crate_name)))
-        .or(matching.first())
-        .copied()
+    by_crate.or(first)
 }
 
 fn find_checksum_in_assets(
@@ -299,7 +306,10 @@ fn find_checksum_in_assets(
             .iter()
             .any(|c| c.to_uppercase() == name_upper)
         {
-            let resp = client.get(&asset.browser_download_url).send()?;
+            let resp = client
+                .get(&asset.browser_download_url)
+                .headers(auth_for_url(&asset.browser_download_url))
+                .send()?;
             if resp.status().is_success() {
                 let body = resp.text()?;
                 if let Some(checksum) = parse_checksum_file(&body, artifact_name) {
@@ -339,7 +349,10 @@ fn try_fetch_checksum(
 
     for suffix in &suffixes {
         let checksum_url = format!("{artifact_url}{suffix}");
-        let resp = client.get(&checksum_url).send();
+        let resp = client
+            .get(&checksum_url)
+            .headers(auth_for_url(&checksum_url))
+            .send();
         if let Ok(r) = resp {
             if r.status().is_success() {
                 let body = r.text()?;

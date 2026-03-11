@@ -1,17 +1,12 @@
-mod cache;
-mod cli;
-mod download;
-mod error;
-mod exec;
-mod registry;
-mod resolve;
-mod target;
-
-const USER_AGENT: &str = "rvx (https://github.com/user/rvx)";
-
 use clap::Parser;
-use cli::{Cli, CrateSpec};
 use fs2::FileExt;
+use rvx::cache;
+use rvx::cli::{Cli, CrateSpec};
+use rvx::download;
+use rvx::error;
+use rvx::exec;
+use rvx::registry;
+use rvx::resolve;
 
 fn main() {
     if let Err(e) = run() {

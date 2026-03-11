@@ -158,20 +158,18 @@ fn fetch_binstall_metadata(
                 entry.read_to_string(&mut contents)?;
 
                 let cargo_toml: CargoToml = toml::from_str(&contents)?;
-                if let Some(pkg) = cargo_toml.package {
-                    if let Some(meta) = pkg.metadata {
-                        if let Some(binstall) = meta.binstall {
-                            if let Some(pkg_url) = binstall.pkg_url {
-                                return Ok(Some(BinstallMeta {
-                                    pkg_url,
-                                    pkg_fmt: binstall.pkg_fmt,
-                                    bin_dir: binstall.bin_dir,
-                                }));
-                            }
-                        }
-                    }
-                }
-                break;
+                let binstall = cargo_toml
+                    .package
+                    .and_then(|pkg| pkg.metadata)
+                    .and_then(|meta| meta.binstall)
+                    .and_then(|b| {
+                        Some(BinstallMeta {
+                            pkg_url: b.pkg_url?,
+                            pkg_fmt: b.pkg_fmt,
+                            bin_dir: b.bin_dir,
+                        })
+                    });
+                return Ok(binstall);
             }
         }
     }

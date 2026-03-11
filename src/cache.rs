@@ -90,13 +90,7 @@ pub fn store_to(base: &Path, binary_path: &Path, meta: &CacheMeta) -> Result<Pat
     let dest = bin.join(&key);
 
     fs::copy(binary_path, &dest)?;
-
-    // Set executable permission on Unix
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(&dest, fs::Permissions::from_mode(0o755))?;
-    }
+    crate::set_executable(&dest)?;
 
     // Write metadata
     let meta_file = meta_path.join(format!("{key}.json"));
@@ -162,7 +156,7 @@ pub fn clean_in(base: &Path) -> Result<()> {
 pub fn lock_path(name: &str, version: &str) -> PathBuf {
     rvx_home()
         .join("locks")
-        .join(format!("{name}-{version}.lock"))
+        .join(format!("{name}@{version}.lock"))
 }
 
 fn timestamp_now() -> String {

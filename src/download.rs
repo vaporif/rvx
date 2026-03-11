@@ -49,19 +49,10 @@ pub fn download(artifact: &Artifact, bin_name: &str, quiet: bool) -> Result<Path
 
     // Copy binary to a stable temp location that outlives this function
     let stable_dir = tempfile::tempdir()?;
-    let dest = stable_dir.path().join(&binary_name);
-    fs::copy(&binary_path, &dest)?;
-
-    // Make binary executable on Unix
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(&dest, fs::Permissions::from_mode(0o755))?;
-    }
-
-    // Keep the temp dir alive by leaking it
     let stable_path = stable_dir.keep();
     let final_path = stable_path.join(&binary_name);
+    fs::copy(&binary_path, &final_path)?;
+    crate::set_executable(&final_path)?;
 
     if !quiet {
         eprintln!("Extracted binary: {}", final_path.display());
