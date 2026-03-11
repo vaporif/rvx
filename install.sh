@@ -5,6 +5,20 @@ REPO="vaporif/rvx"
 BINARY="rvx"
 INSTALL_DIR="${RVX_INSTALL_DIR:-$HOME/.local/bin}"
 
+# GitHub API auth (optional, avoids rate limits)
+AUTH_HEADER=""
+if [ -n "${GITHUB_TOKEN:-}" ]; then
+    AUTH_HEADER="Authorization: Bearer ${GITHUB_TOKEN}"
+fi
+
+github_curl() {
+    if [ -n "$AUTH_HEADER" ]; then
+        curl -fsSL -H "$AUTH_HEADER" "$@"
+    else
+        curl -fsSL "$@"
+    fi
+}
+
 # Detect platform
 OS="$(uname -s)"
 ARCH="$(uname -m)"
@@ -24,16 +38,16 @@ esac
 TARGET="${arch}-${os}"
 
 # Get latest release tag (tries stable first, falls back to any release including prereleases)
-LATEST=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null \
+LATEST=$(github_curl "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null \
     | grep '"tag_name"' | head -1 | sed 's/.*: "//;s/".*//')
 
 if [ -z "$LATEST" ]; then
-    LATEST=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases" \
+    LATEST=$(github_curl "https://api.github.com/repos/${REPO}/releases" \
         | grep '"tag_name"' | head -1 | sed 's/.*: "//;s/".*//')
 fi
 
 if [ -z "$LATEST" ]; then
-    echo "error: could not determine latest release" >&2
+    echo "error: could not determine latest release. Set GITHUB_TOKEN if rate-limited." >&2
     exit 1
 fi
 
